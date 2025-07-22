@@ -21,17 +21,17 @@ def print_blockchain_elements():
     for block in blockchain:
         print("Outputting Block")
         print(block)
+    else:
+        print('-' * 20)
 
 def verify_chain():
-    block_index = 0
+    # block_index = 0
     is_valid = True
     # verify if current block is equal to previous block in chain
-    for block in blockchain:
-        print("Block:", block)
+    for block_index in range(len(blockchain)):
         if block_index == 0:
-            block_index += 1
             continue
-        elif block[0] == blockchain[block_index - 1]:
+        elif blockchain[block_index][0] == blockchain[block_index - 1]:
             is_valid = True
         else:
             is_valid = False
@@ -47,7 +47,9 @@ def add_transaction(transaction_amount: float, last_transaction=[1]):
 # keyword arguments example
 # add_value(last_transaction=get_last_blockchain_value(), transaction_amount=tx_amount)
 
-while True:
+waiting_for_input = True
+
+while waiting_for_input:
 
     print("Please choose")
     print("1: Add a new transaction")
@@ -66,12 +68,14 @@ while True:
         if len(blockchain) >= 1:
             blockchain[0] = 2
     elif user_choice == 'q':
-        break
+        waiting_for_input = False
     else:
         print("Invalid choice")
     if not verify_chain():
+        print_blockchain_elements()
         print("Invalid blockchain!")
         break
-
+else:
+    print("User Left")
 
 print('Done!')
