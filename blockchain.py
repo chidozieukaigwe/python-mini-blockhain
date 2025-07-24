@@ -11,6 +11,7 @@ genesis_block = {
     "previous_hash": "",
     "index": 0,
     "transactions": [],
+    "proof": 100
 }
 # Initializing our (empty) blockchain list
 blockchain = [genesis_block]
@@ -31,6 +32,7 @@ def hash_block(block: dict):
 
 def valid_proof(transactions: list, last_hash: str, proof: int):
     """
+    Validate the proof of work when mining a block
     :param transactions:
     :param last_hash:
     :param proof:
@@ -45,7 +47,7 @@ def proof_of_work() -> Union[int, Any]:
     last_block = blockchain[-1]
     last_hash = hash_block(last_block)
     proof = 0
-    while valid_proof(open_transactions, last_hash, proof):
+    while not valid_proof(open_transactions, last_hash, proof):
         proof += 1
     return proof
 
@@ -121,6 +123,9 @@ def verify_chain() -> bool:
             continue
         if block['previous_hash'] != hash_block(blockchain[index - 1]):
             return False
+        if not valid_proof(block['transactions'][:-1], block['previous_hash'], block['proof']):
+            print('Proof of work is invalid')
+            return False
     return True
 
 def verify_transactions() -> bool:
@@ -164,6 +169,7 @@ def mine_block() -> bool:
     last_block = blockchain[-1]
     # Hash the last block (=> to be able to compare it to the stored hash value
     hashed_block = hash_block(last_block)
+    proof = proof_of_work()
     # Miners are rewarded via reward transaction
     reward_transaction: dict = {
         'sender': 'MINING',
@@ -176,6 +182,7 @@ def mine_block() -> bool:
         'previous_hash': hashed_block,
         'index': len(blockchain),
         'transactions': copied_transactions,
+        'proof': proof
     }
     blockchain.append(block)
     return True
