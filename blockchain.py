@@ -16,8 +16,6 @@ blockchain = []
 open_transactions = []
 # We are the owner of this blockchain node, hence this is our ID
 owner = 'Chido'
-# Registered participants: Ourselves + other people sending / receiving coins
-participants = {'Chido'}
 
 def load_data():
     global blockchain
@@ -98,9 +96,7 @@ def valid_proof(transactions: list, last_hash: str, proof: int):
     :return: bool
     """
     guess = (str([tx.to_ordered_dict() for tx in transactions]) + str(last_hash) + str(proof)).encode()
-    print(guess)
     guess_hash = hash_string_256(guess)
-    # print(guess_hash)
     return guess_hash[0:2] == '00'
 
 def proof_of_work() -> Union[int, Any]:
@@ -250,8 +246,7 @@ while waiting_for_input:
     print("1: Add a new transaction")
     print("2: Mine a new block")
     print("3: Output the blockchain blocks")
-    print("4: Output participants")
-    print("5: Check transaction validity")
+    print("4: Check transaction validity")
     print("q: Quit")
 
     user_choice = get_user_choice()
@@ -272,8 +267,6 @@ while waiting_for_input:
     elif user_choice == '3':
         print_blockchain_elements()
     elif user_choice == '4':
-        print(participants)
-    elif user_choice == '5':
         if verify_transactions():
             print('All transactions verified')
         else:
