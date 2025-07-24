@@ -79,9 +79,9 @@ def save_data():
     try:
         # write in binary data
         with open('blockchain.txt', mode='w') as file:
-
+            saveable_chain = [block.__dict__ for block in blockchain]
             # json dumps gives us back a string in JSON format
-            file.write(json.dumps(blockchain))
+            file.write(json.dumps(saveable_chain))
             file.write('\n')
             file.write(json.dumps(open_transactions))
 
