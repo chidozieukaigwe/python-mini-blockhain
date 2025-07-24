@@ -2,7 +2,8 @@ from hash_util import hash_string_256, hash_block
 from transaction import Transaction
 class Verification:
 
-    def verify_chain(self, blockchain) -> bool:
+    @classmethod
+    def verify_chain(cls, blockchain) -> bool:
         """
         Verify the current blockchain and return True it its valid, False otherwise
         :return: bool
@@ -13,24 +14,27 @@ class Verification:
                 continue
             if block.previous_hash != hash_block(blockchain.chain[index - 1]):
                 return False
-            if not self.valid_proof(block.transactions[:-1], block.previous_hash, block.proof):
+            if not cls.valid_proof(block.transactions[:-1], block.previous_hash, block.proof):
                 print('Proof of work is invalid')
                 return False
         return True
 
-    def verify_transaction(self,transaction: Transaction, get_balance):
+    @staticmethod
+    def verify_transaction(transaction: Transaction, get_balance):
         sender_balance = get_balance()
         return sender_balance >= transaction.amount
 
-    def verify_transactions(self, open_transactions, get_balance) -> bool:
+    @classmethod
+    def verify_transactions(cls, open_transactions, get_balance) -> bool:
         """
         Verifies all open transactions
         :return: bool
         """
         # Check all transactions in one go via the all function and list comprehension
-        return all([self.verify_transaction(tx, get_balance) for tx in open_transactions])
+        return all([cls.verify_transaction(tx, get_balance) for tx in open_transactions])
 
-    def valid_proof(self, transactions: list, last_hash: str, proof: int) -> bool:
+    @staticmethod
+    def valid_proof(transactions: list, last_hash: str, proof: int) -> bool:
         """
         Validate the proof of work when mining a block
         :param transactions:

@@ -9,7 +9,7 @@ class Node:
         self.id = 'CHIDO'
         self.blockchain = Blockchain(self.id)
 
-    def listen_for_input(self, verifier: Verification):
+    def listen_for_input(self):
 
         waiting_for_input = True
 
@@ -39,7 +39,7 @@ class Node:
             elif user_choice == '3':
                 self.print_blockchain_elements()
             elif user_choice == '4':
-                if verifier.verify_transactions(self.blockchain.open_transactions, self.blockchain.get_balance):
+                if Verification.verify_transactions(self.blockchain.open_transactions, self.blockchain.get_balance):
                     print('All transactions verified')
                 else:
                     print('There are invalid transactions')
@@ -47,7 +47,7 @@ class Node:
                 waiting_for_input = False
             else:
                 print("Invalid choice")
-            if not verifier.verify_chain(self.blockchain):
+            if not Verification.verify_chain(self.blockchain):
                 self.print_blockchain_elements()
                 print("Invalid blockchain!")
                 break
@@ -88,5 +88,4 @@ class Node:
             print('-' * 20)
 
 node = Node()
-verifierService = Verification()
-node.listen_for_input(verifier=verifierService)
+node.listen_for_input()
