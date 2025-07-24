@@ -1,22 +1,24 @@
 import functools
-import hashlib
+import hashlib as hl
 import json
 from typing import Union, Any, Optional
 
 # Global Constant
 MINING_REWARD = 10
 
-# Initialize our blockchain list
+# Initialize our blockchain
 genesis_block = {
     "previous_hash": "",
     "index": 0,
     "transactions": [],
 }
-blockchain = [genesis_block]  #python list
+# Initializing our (empty) blockchain list
+blockchain = [genesis_block]
+# unhandled transactions
 open_transactions = []
 # We are the owner of this blockchain node, hence this is our ID
 owner = 'Chido'
-# Registered participants: Ourself + other people sending / receiving coins
+# Registered participants: Ourselves + other people sending / receiving coins
 participants = {'Chido'}
 
 def hash_block(block: dict):
@@ -25,15 +27,42 @@ def hash_block(block: dict):
     :param block:
     :return: string representation of the block
     """
-    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
+    return hl.sha256(json.dumps(block).encode()).hexdigest()
+
+def valid_proof(transactions: list, last_hash: str, proof: int):
+    """
+    :param transactions:
+    :param last_hash:
+    :param proof:
+    :return: bool
+    """
+    guess: bytes = (str(transactions) + str(last_hash) + str(proof)).encode()
+    guess_hash = hl.sha256(guess).hexdigest()
+    print(guess_hash)
+    return guess_hash[0:2] == '00'
+
+def proof_of_work() -> Union[int, Any]:
+    last_block = blockchain[-1]
+    last_hash = hash_block(last_block)
+    proof = 0
+    while valid_proof(open_transactions, last_hash, proof):
+        proof += 1
+    return proof
 
 def get_balance(participant: str) -> Union[int, Any]:
+    # Fetch a list of all sent coin amounts for the given person (empty lists)
+    # This fetches sent amounts of transactions that were already included in
     tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in blockchain]
+    # Fetch a list of all sent coin amounts for the given person (empty lists)
+    # This fetches sent amount of open transactions (to avoid double spending
     open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participant]
     tx_sender.append(open_tx_sender)
     amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0 , tx_sender, 0)
+    # This fetches received coin amounts of transactions that were already in
+    # We ignore open transactions here because you shouldnt be able to spend
     tx_recipient = [[tx['amount'] for tx in block['transactions'] if tx['recipient'] == participant] for block in blockchain]
-    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 20 , tx_recipient, 0)
+    amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0 , tx_recipient, 0)
+    # Return total balance
     return amount_received - amount_sent
 
 def get_last_blockchain_value() -> Optional[dict[str, Union[str, int, list[Any]]]]:
