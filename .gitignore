@@ -1,3 +1,4 @@
-notes.txt
-datastructures.py
-functions.py
+misc/*
+misc/notes.txt
+misc/datastructures.py
+misc/functions.py
