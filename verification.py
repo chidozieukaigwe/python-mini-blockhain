@@ -8,10 +8,10 @@ class Verification:
         :return: bool
         """
         # enumerate: give you back a tuple with two pieces of info - index:element
-        for (index, block) in enumerate(blockchain):
+        for (index, block) in enumerate(blockchain.chain):
             if index == 0:
                 continue
-            if block.previous_hash != hash_block(blockchain[index - 1]):
+            if block.previous_hash != hash_block(blockchain.chain[index - 1]):
                 return False
             if not self.valid_proof(block.transactions[:-1], block.previous_hash, block.proof):
                 print('Proof of work is invalid')
@@ -19,7 +19,7 @@ class Verification:
         return True
 
     def verify_transaction(self,transaction: Transaction, get_balance):
-        sender_balance = get_balance(transaction.sender)
+        sender_balance = get_balance()
         return sender_balance >= transaction.amount
 
     def verify_transactions(self, open_transactions, get_balance) -> bool:
