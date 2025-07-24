@@ -1,4 +1,8 @@
 import functools
+import hashlib
+import json
+from typing import Union, Any, Optional
+
 # Global Constant
 MINING_REWARD = 10
 
@@ -10,15 +14,20 @@ genesis_block = {
 }
 blockchain = [genesis_block]  #python list
 open_transactions = []
+# We are the owner of this blockchain node, hence this is our ID
 owner = 'Chido'
-# initializes a set as we did not add key value paring that would turn it into a dictionary
+# Registered participants: Ourself + other people sending / receiving coins
 participants = {'Chido'}
 
-def hash_block(block):
-    return '-'.join([str(block[key]) for key in block])
+def hash_block(block: dict):
+    """
+    Hashes a block and returns a string representation of the block
+    :param block:
+    :return: string representation of the block
+    """
+    return hashlib.sha256(json.dumps(block).encode()).hexdigest()
 
-def get_balance(participant: str):
-    # nest list comprehension
+def get_balance(participant: str) -> Union[int, Any]:
     tx_sender = [[tx['amount'] for tx in block['transactions'] if tx['sender'] == participant] for block in blockchain]
     open_tx_sender = [tx['amount'] for tx in open_transactions if tx['sender'] == participant]
     tx_sender.append(open_tx_sender)
@@ -27,7 +36,11 @@ def get_balance(participant: str):
     amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 20 , tx_recipient, 0)
     return amount_received - amount_sent
 
-def get_last_blockchain_value():
+def get_last_blockchain_value() -> Optional[dict[str, Union[str, int, list[Any]]]]:
+    """
+    Returns the last value of the current blockchain
+    :return: Optional[dict[str, Union[str, int, list[Any]]]]
+    """
     # -1 gets the last value via its index
     if len(blockchain) < 1:
         # None type: tells the program that there is nothing
@@ -35,7 +48,11 @@ def get_last_blockchain_value():
     return blockchain[-1]
 
 
-def get_transaction_value():
+def get_transaction_value() -> tuple[str, float]:
+    """
+    Returns the input of the user (a new transaction amount) as a float
+    :return: tuple[str, float]
+    """
     # Get user input, transform it from string to a float and store it
     tx_recipient = input('Enter the recipient of the transaction: ')
     tx_amount = float(input("You transaction amount please: "))
@@ -43,12 +60,19 @@ def get_transaction_value():
     return tx_recipient, tx_amount
 
 
-def get_user_choice():
+def get_user_choice() -> str:
+    """
+    Prompts the user for its choice and return it
+    :return: str
+    """
     user_input = input('Your choice: ')
     return user_input
 
 
-def print_blockchain_elements():
+def print_blockchain_elements() -> None:
+    """
+    Out all blocks of the blockchain
+    """
     # Output the blockchain list to the console
     for block in blockchain:
         print("Outputting Block")
@@ -57,19 +81,26 @@ def print_blockchain_elements():
         print('-' * 20)
 
 
-def verify_chain():
+def verify_chain() -> bool:
+    """
+    Verify the current blockchain and return True it its valid, False otherwise
+    :return: bool
+    """
     # enumerate: give you back a tuple with two pieces of info - index:element
     for (index, block) in enumerate(blockchain):
         if index == 0:
             continue
         if block['previous_hash'] != hash_block(blockchain[index - 1]):
             return False
-
     return True
 
-def verify_transactions():
+def verify_transactions() -> bool:
+    """
+    Verifies all open transactions
+    :return: bool
+    """
     # Check all transactions in one go via the all function and list comprehension
-   return all([verify_transaction(tx) for tx in open_transactions])
+    return all([verify_transaction(tx) for tx in open_transactions])
 
 def verify_transaction(transaction: dict):
     sender_balance = get_balance(transaction['sender'])
@@ -80,6 +111,7 @@ def add_transaction(recipient: str, sender: str = owner, amount: float = 1.0) ->
     :param sender: The sender of coins
     :param recipient: The recipient of the coins
     :param amount: The amount of coins sent with the transaction (default = 1.0)
+    :return: bool
     """
     transaction: dict = {
         'sender': sender,
@@ -94,11 +126,16 @@ def add_transaction(recipient: str, sender: str = owner, amount: float = 1.0) ->
         return True
     return False
 
-def mine_block():
+def mine_block() -> bool:
+    """
+    Create a new block and add open transactions to it
+    :return: bool
+    """
+    # Fetch the currently last block of the blockchain
     last_block = blockchain[-1]
-    #  list comprehension - creates a list for every value of the incoming dictionary
-    #  Wrap list to turn it into string
+    # Hash the last block (=> to be able to compare it to the stored hash value
     hashed_block = hash_block(last_block)
+    # Miners are rewarded via reward transaction
     reward_transaction: dict = {
         'sender': 'MINING',
         'recipient': owner,
