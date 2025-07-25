@@ -1,13 +1,13 @@
 import functools
 import json
-import pickle # convert python data to binary in a file
 from typing import Union, Any, Optional
 from uuid import  uuid4
 # App
-from hash_util import hash_block
+from utility.hash_util import hash_block
+from utility.verification import Verification
 from block import Block
 from transaction import Transaction
-from verification import Verification
+
 
 # Global Constant
 MINING_REWARD = 10
