@@ -8,11 +8,11 @@ from utility.verification import Verification
 from block import Block
 from transaction import Transaction
 
-
 # Global Constant
 MINING_REWARD = 10
 
 class Blockchain:
+
     def __init__(self, hosting_node_id: uuid4)-> None:
         # Initialize our blockchain
         genesis_block = Block(0, '', [], 100, 0)
@@ -20,8 +20,9 @@ class Blockchain:
         self.chain = [genesis_block]
         # unhandled transactions
         self.__open_transactions = []
-        self.load_data()
         self.hosting_node = hosting_node_id
+        self.load_data()
+
 
     @property
     def chain(self) -> list[Block]:

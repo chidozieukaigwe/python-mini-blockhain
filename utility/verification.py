@@ -1,3 +1,5 @@
+""" Provides verification helper methods """
+
 from utility.hash_util import hash_string_256, hash_block
 from transaction import Transaction
 class Verification:
@@ -5,7 +7,7 @@ class Verification:
     @classmethod
     def verify_chain(cls, blockchain) -> bool:
         """
-        Verify the current blockchain and return True it its valid, False otherwise
+        A helper class which offers various static and class based verification methods
         :return: bool
         """
         # enumerate: give you back a tuple with two pieces of info - index:element

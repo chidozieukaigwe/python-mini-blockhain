@@ -2,6 +2,9 @@ import hashlib as hl
 from block import Block
 import json
 
+# Export only the functions listed in the list
+# __all__ = ['hash_string_256', 'hash_block']
+
 def hash_string_256(value) -> str:
     """
     Hash a string using sha256
