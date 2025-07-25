@@ -1,3 +1,4 @@
+from typing import Optional
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA256
@@ -23,18 +24,23 @@ class Wallet:
                 private_key = keys[1]
                 self.public_key = public_key
                 self.private_key = private_key
+            return True
         except (IOError, IndexError):
             print('Loading wallet failed')
+            return False
 
-    def save_keys(self):
+    def save_keys(self)-> Optional[bool]:
         if self.public_key is not None and self.private_key is not None:
             try:
                 with open('wallet.txt', mode='w') as file:
                     file.write(self.public_key)
                     file.write('\n')
                     file.write(self.private_key)
+                return True
             except (IOError, IndexError):
                 print('Saving wallet failed')
+                return False
+        return None
 
     @staticmethod
     def __generate_keys():
