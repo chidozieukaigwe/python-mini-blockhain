@@ -1,7 +1,6 @@
 import functools
 import json
 from typing import Union, Any, Optional
-from uuid import  uuid4
 # App
 from utility.hash_util import hash_block
 from utility.verification import Verification
@@ -13,7 +12,7 @@ MINING_REWARD = 10
 
 class Blockchain:
 
-    def __init__(self, hosting_node_id: uuid4)-> None:
+    def __init__(self, hosting_node_id)-> None:
         # Initialize our blockchain
         genesis_block = Block(0, '', [], 100, 0)
         # Initializing our (empty) blockchain list
@@ -131,13 +130,17 @@ class Blockchain:
             return None
         return self.__chain[-1]
 
-    def add_transaction(self, recipient: str, sender: uuid4, amount: float = 1.0) -> bool:
+    def add_transaction(self, recipient: str, sender, amount: float = 1.0) -> bool:
         """
         :param sender: The sender of coins
         :param recipient: The recipient of the coins
         :param amount: The amount of coins sent with the transaction (default = 1.0)
         :return: bool
         """
+
+        if self.hosting_node is None:
+            return False
+
         transaction = Transaction(sender=sender, recipient=recipient, amount=amount)
 
         if Verification.verify_transaction(transaction, self.get_balance):
@@ -151,6 +154,10 @@ class Blockchain:
         Create a new block and add open transactions to it
         :return: bool
         """
+
+        if self.hosting_node is None:
+            return False
+
         # Fetch the currently last block of the blockchain
         last_block = self.__chain[-1]
         # Hash the last block (=> to be able to compare it to the stored hash value

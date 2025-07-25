@@ -5,9 +5,8 @@ from wallet import Wallet
 class Node:
 
     def __init__(self):
-        # self.wallet.public_key = str(uuid4())
         self.wallet = Wallet()
-        self.blockchain = Blockchain(self.wallet.public_key)
+        self.blockchain = None
 
 
     def listen_for_input(self):
@@ -38,7 +37,8 @@ class Node:
                     print('Failed to add transaction')
                 print(self.blockchain.get_open_transactions())
             elif user_choice == '2':
-                self.blockchain.mine_block()
+                if not self.blockchain.mine_block():
+                    print('Mining failed, have you created a wallet')
             elif user_choice == '3':
                 self.print_blockchain_elements()
             elif user_choice == '4':
@@ -48,6 +48,7 @@ class Node:
                     print('There are invalid transactions')
             elif user_choice == '5':
                 self.wallet.create_keys()
+                self.blockchain = Blockchain(self.wallet.public_key)
             elif user_choice == '6':
                 pass
             elif user_choice == 'q':
