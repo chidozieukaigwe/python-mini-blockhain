@@ -1,12 +1,14 @@
 from blockchain import Blockchain
 from utility.verification import Verification
+from wallet import Wallet
 
 class Node:
 
     def __init__(self):
-        # self.id = str(uuid4())
-        self.id = 'CHIDO'
-        self.blockchain = Blockchain(self.id)
+        # self.wallet.public_key = str(uuid4())
+        self.wallet = Wallet()
+        self.blockchain = Blockchain(self.wallet.public_key)
+
 
     def listen_for_input(self):
 
@@ -19,6 +21,8 @@ class Node:
             print("2: Mine a new block")
             print("3: Output the blockchain blocks")
             print("4: Check transaction validity")
+            print("5: Create Wallet")
+            print("6: Load Wallet")
             print("q: Quit")
 
             user_choice = self.get_user_choice()
@@ -28,7 +32,7 @@ class Node:
                 tx_data = self.get_transaction_value()
                 # unpack tuple
                 recipient, amount = tx_data
-                if self.blockchain.add_transaction(recipient=recipient, sender=self.id, amount=amount):
+                if self.blockchain.add_transaction(recipient=recipient, sender=self.wallet.public_key, amount=amount):
                     print('Added transaction')
                 else:
                     print('Failed to add transaction')
@@ -42,6 +46,10 @@ class Node:
                     print('All transactions verified')
                 else:
                     print('There are invalid transactions')
+            elif user_choice == '5':
+                self.wallet.create_keys()
+            elif user_choice == '6':
+                pass
             elif user_choice == 'q':
                 waiting_for_input = False
             else:
@@ -50,7 +58,7 @@ class Node:
                 self.print_blockchain_elements()
                 print("Invalid blockchain!")
                 break
-            print('Balance of {}: {:6.2f}'.format(self.id, self.blockchain.get_balance()))
+            print('Balance of {}: {:6.2f}'.format(self.wallet.public_key, self.blockchain.get_balance()))
         else:
             print("User Left")
 
