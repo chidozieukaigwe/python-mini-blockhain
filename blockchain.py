@@ -103,6 +103,10 @@ class Blockchain:
         return proof
 
     def get_balance(self) -> Union[int, Any]:
+
+        if self.hosting_node is None:
+            return None
+
         participant = self.hosting_node
         # Fetch a list of all sent coin amounts for the given person (empty lists)
         # This fetches sent amounts of transactions that were already included in
