@@ -60,8 +60,8 @@ class Blockchain:
                         block['proof'],
                         block['timestamp']
                     )
+                    updated_blockchain.append(updated_block)
 
-                updated_blockchain.append(updated_block)
                 self.chain = updated_blockchain
                 open_transactions = json.loads(file_content[1])
                 updated_transactions = []

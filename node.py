@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from wallet import Wallet
 from flask_cors import CORS
 from blockchain import Blockchain
@@ -7,6 +7,10 @@ app = Flask(__name__)
 wallet = Wallet()
 blockchain = Blockchain(wallet.public_key)
 CORS(app)
+
+@app.route('/', methods=['GET'])
+def get_ui():
+    return send_from_directory('ui', 'node.html')
 @app.route('/wallet', methods=['POST'])
 def create_keys():
     wallet.create_keys()
@@ -57,9 +61,6 @@ def get_balance():
             'wallet_set_up': wallet.public_key is not None,
         }
         return jsonify(response), 500
-@app.route('/', methods=['GET'])
-def get_ui():
-    return 'This works'
 
 @app.route('/transaction', methods=['POST'])
 def add_transaction():
