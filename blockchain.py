@@ -20,9 +20,9 @@ class Blockchain:
         self.chain = [genesis_block]
         # unhandled transactions
         self.__open_transactions = []
-        self.load_data()
         self.hosting_node = hosting_node_id
         self.__peer_nodes = set()
+        self.load_data()
 
     # Decorator acts as a get to the property
     @property
