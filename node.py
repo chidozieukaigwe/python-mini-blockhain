@@ -126,6 +126,43 @@ def mine():
         }
     return jsonify(response), 500
 
+@app.route('/broadcast-transaction', methods=['POST'])
+def broadcast_transaction(transaction):
+  values = request.get_json()
+  if not values:
+      response = {
+          'message': 'No data found',
+      }
+      return jsonify(response), 400
+  required = ['sender', 'recipient', 'amount', 'signature']
+  if not all(key in values for key in required):
+      response = { 'message': 'Required data is missing' }
+      return jsonify(response), 400
+  success = blockchain.add_transaction(
+      recipient=values['recipient'],
+      sender=values['sender'],
+      amount=values['amount'],
+      signature=values['signature'],
+      is_receiving=True
+  )
+  if success:
+      response = {
+          'message': 'Successfully added transaction',
+          'transaction': {
+              'sender': values['sender'],
+              'recipient': values['recipient'],
+              'amount': values['amount'],
+              'signature': values['signature']
+          },
+      }
+      return jsonify(response), 201
+  else:
+      response = {
+          'message': 'Creating a transaction failed.',
+      }
+      return jsonify(response), 500
+
+
 @app.route('/transactions', methods=['GET'])
 def get_open_transactions():
     transactions = blockchain.get_open_transactions()

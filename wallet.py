@@ -58,7 +58,12 @@ class Wallet:
 
     @staticmethod
     def verify_transaction(transaction):
+        """
+        Verify the signature of a transaction
 
+        Arguments:
+            :transaction (Transaction): transaction to verify
+        """
         public_key = RSA.importKey(binascii.unhexlify(transaction.sender))
 
         verifier = PKCS1_v1_5.new(public_key)

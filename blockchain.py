@@ -115,12 +115,16 @@ class Blockchain:
             proof += 1
         return proof
 
-    def get_balance(self) -> Union[int, Any]:
+    def get_balance(self, sender=None) -> Union[int, Any]:
+        """Calculate and return the balance of a participant"""
 
-        if self.public_key is None:
-            return None
+        if sender is None:
+            if self.public_key is None:
+                return None
+            participant = self.public_key
+        else:
+            participant = sender
 
-        participant = self.public_key
         # Fetch a list of all sent coin amounts for the given person (empty lists)
         # This fetches sent amounts of transactions that were already included in
         tx_sender = [[tx.amount for tx in block.transactions if tx.sender == participant] for block in self.__chain]
@@ -151,12 +155,13 @@ class Blockchain:
             return None
         return self.__chain[-1]
 
-    def add_transaction(self, recipient: str, sender, signature, amount: float = 1.0, ) -> bool:
+    def add_transaction(self, recipient: str, sender, signature, amount: float = 1.0, is_receiving=False) -> bool:
         """
         :param sender: The sender of coins
         :param recipient: The recipient of the coins
         :param signature: The signature of the transaction
         :param amount: The amount of coins sent with the transaction (default = 1.0)
+        :param is_receiving: Whether the transaction is recieving
         :return: bool
         """
 
@@ -165,22 +170,24 @@ class Blockchain:
 
         transaction = Transaction(sender=sender, recipient=recipient, signature=signature, amount=amount)
 
-        if Verification.verify_transaction(transaction,          self.get_balance):
+        if Verification.verify_transaction(transaction,         self.get_balance):
             self.__open_transactions.append(transaction)
             self.save_data()
+            
+            if not is_receiving:
 
-            for node in self.__peer_nodes:
-                url = 'http://{}/broadcast-transaction'.format(node)
-
-                try:
-                    response = requests.post(url, json={'sender': sender, 'recipient': recipient, 'amount': amount,'signature': signature, })
-
-                    if response.status_code == 400 or response.status_code == 500:
-                        print('Transaction failed, needs resolving')
-                        return False
-                except requests.exceptions.ConnectionError:
-                    continue
-            return True
+                for node in self.__peer_nodes:
+                    url = 'http://{}/broadcast-transaction'.format(node)
+    
+                    try:
+                        response = requests.post(url, json={'sender': sender, 'recipient': recipient, 'amount': amount,'signature': signature, })
+    
+                        if response.status_code == 400 or response.status_code == 500:
+                            print('Transaction failed, needs resolving')
+                            return False
+                    except requests.exceptions.ConnectionError:
+                        continue
+                return True
         return False
 
     def mine_block(self):
