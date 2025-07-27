@@ -127,7 +127,7 @@ def mine():
     return jsonify(response), 500
 
 @app.route('/broadcast-transaction', methods=['POST'])
-def broadcast_transaction(transaction):
+def broadcast_transaction():
   values = request.get_json()
   if not values:
       response = {

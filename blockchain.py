@@ -159,8 +159,8 @@ class Blockchain:
         :return: bool
         """
 
-        if self.public_key is None:
-            return False
+        # if self.public_key is None:
+        #     return False
 
         transaction = Transaction(sender=sender, recipient=recipient, signature=signature, amount=amount)
 
@@ -181,7 +181,7 @@ class Blockchain:
                             return False
                     except requests.exceptions.ConnectionError:
                         continue
-                return True
+            return True
         return False
 
     def mine_block(self):
