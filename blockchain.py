@@ -57,8 +57,7 @@ class Blockchain:
                 blockchain = json.loads(file_content[0][:-1])
                 updated_blockchain = []
                 for block in blockchain:
-                    converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in
-                                    block['transactions']]
+                    converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
 
                     updated_block = Block(
                         block['index'],
@@ -86,10 +85,8 @@ class Blockchain:
     def save_data(self):
         try:
             # write in binary data
-            with open('blockchain-{}.txt.'.format(self.node_id), mode='w') as file:
-                saveable_chain = [block.__dict__ for block in [
-                    Block(block_el.index, block_el.previous_hash, [tx.__dict__ for tx in block_el.transactions],
-                          block_el.proof, block_el.timestamp) for block_el in self.__chain]]
+            with open('blockchain-{}.txt'.format(self.node_id), mode='w') as file:
+                saveable_chain = [block.__dict__ for block in [Block(block_el.index, block_el.previous_hash, [tx.__dict__ for tx in block_el.transactions],block_el.proof, block_el.timestamp) for block_el in self.__chain]]
                 # json dumps gives us back a string in JSON format
                 file.write(json.dumps(saveable_chain))
                 file.write('\n')
@@ -133,14 +130,11 @@ class Blockchain:
         open_tx_sender = [tx.amount for tx in self.__open_transactions if tx.sender == participant]
         tx_sender.append(open_tx_sender)
         print(tx_sender)
-        amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0,
-                                       tx_sender, 0)
+        amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_sender, 0)
         # This fetches received coin amounts of transactions that were already in
         # We ignore open transactions here because you shouldn't be able to spend
-        tx_recipient = [[tx.amount for tx in block.transactions if tx.recipient == participant] for block in
-                        self.__chain]
-        amount_received = functools.reduce(
-            lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
+        tx_recipient = [[tx.amount for tx in block.transactions if tx.recipient == participant] for block in self.__chain]
+        amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
         # Return total balance
         return amount_received - amount_sent
 
@@ -223,7 +217,36 @@ class Blockchain:
         self.__chain.append(block)
         self.__open_transactions = []
         self.save_data()
+
+        for node in self.__peer_nodes:
+            url = 'http://{}/broadcast-block'.format(node)
+
+            converted_block = block.__dict__.copy()
+
+            converted_block['transactions'] = [tx.__dict__ for tx in converted_block['transactions']]
+
+            try:
+                response = requests.post(url, json={'block': converted_block})
+                if response.status_code == 400 or response.status_code == 500:
+                    print('Block failed, needs resolving')
+
+            except requests.exceptions.ConnectionError:
+                continue
+
+
         return block
+
+    def add_block(self, block):
+        transactions = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
+        proof_is_valid = Verification.valid_proof(transactions[:-1], block['previous_hash'], block['proof'])
+        hashes_match = hash_block(self.chain[-1]) == block['previous_hash']
+
+        if not proof_is_valid or not hashes_match:
+            return False
+        converted_block = Block(block['index'], block['previous_hash'], transactions, block['proof'], block['timestamp'])
+        self.__chain.append(converted_block)
+        self.save_data()
+        return True
 
     def add_peer_node(self, node):
         """ Add a new node to the peer node set
