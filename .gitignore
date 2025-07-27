@@ -1,4 +1,5 @@
 misc/*
+*.txt
 misc/notes.txt
 misc/datastructures.py
 misc/functions.py

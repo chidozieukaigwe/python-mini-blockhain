@@ -7,21 +7,24 @@ from utility.verification import Verification
 from block import Block
 from transaction import Transaction
 from wallet import Wallet
+import requests
 
 # Global Constant
 MINING_REWARD = 10
 
+
 class Blockchain:
 
-    def __init__(self, hosting_node_id):
+    def __init__(self, public_key, node_id):
         # Initialize our blockchain
         genesis_block = Block(0, '', [], 100, 0)
         # Initializing our (empty) blockchain list
         self.chain = [genesis_block]
         # unhandled transactions
         self.__open_transactions = []
-        self.hosting_node = hosting_node_id
+        self.public_key = public_key
         self.__peer_nodes = set()
+        self.node_id = node_id
         self.load_data()
 
     # Decorator acts as a get to the property
@@ -39,7 +42,7 @@ class Blockchain:
 
     def load_data(self):
         try:
-            with open('blockchain.txt', mode='r') as file:
+            with open('blockchain-{}.txt'.format(self.node_id), mode='r') as file:
                 # give use all the lines in a list readlines() fn
                 file_content = file.readlines()
 
@@ -54,7 +57,8 @@ class Blockchain:
                 blockchain = json.loads(file_content[0][:-1])
                 updated_blockchain = []
                 for block in blockchain:
-                    converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in block['transactions']]
+                    converted_tx = [Transaction(tx['sender'], tx['recipient'], tx['signature'], tx['amount']) for tx in
+                                    block['transactions']]
 
                     updated_block = Block(
                         block['index'],
@@ -75,15 +79,17 @@ class Blockchain:
                 peer_nodes = json.loads(file_content[2])
                 self.__peer_nodes = set(peer_nodes)
         except (IOError, IndexError):
-               pass
+            pass
         finally:
             print('CleanUp!')
 
     def save_data(self):
         try:
             # write in binary data
-            with open('blockchain.txt', mode='w') as file:
-                saveable_chain = [block.__dict__ for block in [Block(block_el.index, block_el.previous_hash, [tx.__dict__ for tx in block_el.transactions], block_el.proof, block_el.timestamp) for block_el in self.__chain]]
+            with open('blockchain-{}.txt.'.format(self.node_id), mode='w') as file:
+                saveable_chain = [block.__dict__ for block in [
+                    Block(block_el.index, block_el.previous_hash, [tx.__dict__ for tx in block_el.transactions],
+                          block_el.proof, block_el.timestamp) for block_el in self.__chain]]
                 # json dumps gives us back a string in JSON format
                 file.write(json.dumps(saveable_chain))
                 file.write('\n')
@@ -111,10 +117,10 @@ class Blockchain:
 
     def get_balance(self) -> Union[int, Any]:
 
-        if self.hosting_node is None:
+        if self.public_key is None:
             return None
 
-        participant = self.hosting_node
+        participant = self.public_key
         # Fetch a list of all sent coin amounts for the given person (empty lists)
         # This fetches sent amounts of transactions that were already included in
         tx_sender = [[tx.amount for tx in block.transactions if tx.sender == participant] for block in self.__chain]
@@ -123,11 +129,14 @@ class Blockchain:
         open_tx_sender = [tx.amount for tx in self.__open_transactions if tx.sender == participant]
         tx_sender.append(open_tx_sender)
         print(tx_sender)
-        amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0 , tx_sender, 0)
+        amount_sent = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0,
+                                       tx_sender, 0)
         # This fetches received coin amounts of transactions that were already in
         # We ignore open transactions here because you shouldn't be able to spend
-        tx_recipient = [[tx.amount for tx in block.transactions if tx.recipient == participant] for block in self.__chain]
-        amount_received = functools.reduce(lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0 , tx_recipient, 0)
+        tx_recipient = [[tx.amount for tx in block.transactions if tx.recipient == participant] for block in
+                        self.__chain]
+        amount_received = functools.reduce(
+            lambda tx_sum, tx_amt: tx_sum + sum(tx_amt) if len(tx_amt) > 0 else tx_sum + 0, tx_recipient, 0)
         # Return total balance
         return amount_received - amount_sent
 
@@ -142,7 +151,7 @@ class Blockchain:
             return None
         return self.__chain[-1]
 
-    def add_transaction(self, recipient: str, sender, signature,  amount: float = 1.0,) -> bool:
+    def add_transaction(self, recipient: str, sender, signature, amount: float = 1.0, ) -> bool:
         """
         :param sender: The sender of coins
         :param recipient: The recipient of the coins
@@ -151,14 +160,26 @@ class Blockchain:
         :return: bool
         """
 
-        if self.hosting_node is None:
+        if self.public_key is None:
             return False
 
         transaction = Transaction(sender=sender, recipient=recipient, signature=signature, amount=amount)
 
-        if Verification.verify_transaction(transaction, self.get_balance):
+        if Verification.verify_transaction(transaction,          self.get_balance):
             self.__open_transactions.append(transaction)
             self.save_data()
+
+            for node in self.__peer_nodes:
+                url = 'http://{}/broadcast-transaction'.format(node)
+
+                try:
+                    response = requests.post(url, json={'sender': sender, 'recipient': recipient, 'amount': amount,'signature': signature, })
+
+                    if response.status_code == 400 or response.status_code == 500:
+                        print('Transaction failed, needs resolving')
+                        return False
+                except requests.exceptions.ConnectionError:
+                    continue
             return True
         return False
 
@@ -168,7 +189,7 @@ class Blockchain:
         :return: bool
         """
 
-        if self.hosting_node is None:
+        if self.public_key is None:
             return None
 
         # Fetch the currently last block of the blockchain
@@ -178,7 +199,7 @@ class Blockchain:
         proof = self.proof_of_work()
 
         # Miners are rewarded via reward transaction
-        reward_transaction = Transaction(sender='MINING', recipient=self.hosting_node, signature='', amount=MINING_REWARD)
+        reward_transaction = Transaction(sender='MINING', recipient=self.public_key, signature='', amount=MINING_REWARD)
 
         # Copying transaction instead of manipulating the original open_transactions list [:] means to copy complete list
         # This ensures that if for some reason the mining should fail, we dont have the reward transaction
@@ -190,7 +211,7 @@ class Blockchain:
 
         copied_transactions.append(reward_transaction)
 
-        block = Block(len(self.__chain), hashed_block,copied_transactions, proof)
+        block = Block(len(self.__chain), hashed_block, copied_transactions, proof)
 
         self.__chain.append(block)
         self.__open_transactions = []
